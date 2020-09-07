@@ -40,15 +40,13 @@ const addEmploy = [
   {
     type: "list",
     message: "What is the employee's role?",
-    choices: ["Lawyer","Manager", "Accountant", "I.T", "Receptionist"],
-    //choices: connection.role.title,
+    choices: ["Lawyer", "Manager", "Accountant", "I.T", "Receptionist", "Sales Lead"],
     name: "role_id"
   },
   {
     type: "list",
     message: "Who is the employee's manager?",
-    choices: ["Sarah", "Peter"],
-    //choices: connection.role.manager,
+    choices: ["Sarah", "Peter", "Lawrence", "Jack", "Felicia"],
     name: "manager_id"
   }];
 
@@ -79,22 +77,19 @@ const newDepartment = [
   },
 ];
 
-const updateRole = [
-  {
-    type: "list",
-    message: "Which employee's role would you like to update?",
-    choices: [],
-    name: "employee"
-  },
-  {
-    type: "list",
-    message: "select the employees new role",
-    // choices: connection.role.title,
-    name: "newRole"
-  }
-];
-
-
+// const updateRole = [
+//   {
+//     type: "list",
+//     message: "Which employee's role would you like to update?",
+//     choices: [],
+//     name: "full_name"
+//   },
+//   {
+//     type: "list",
+//     message: "select the employees new role",
+//     name: "newRole"
+//   }
+// ];
 
 connection.connect(function (err) {
   if (err) throw err;
@@ -133,101 +128,130 @@ function afterConnection() {
 };
 
 function addEmployee() {
-  inquirer.prompt(addEmploy).then(function (data) { console.log(data)
-    const {first_name, last_name, manager_id, role_id} = data 
-    connection.query("INSERT INTO employee SET ?", 
-    {
-      first_name: first_name,
-      last_name: last_name,
-      manager_id: handleManager(manager_id),
-      role_id: handleRoles(role_id)
-    }, (err, res) => {
-      if(err) throw err;
-      // make an array of roles
-      console.log(res.affectedRows)
-    })
+  inquirer.prompt(addEmploy).then(function (data) {
+    console.log(data)
+    const { first_name, last_name, manager_id, role_id } = data
+    connection.query("INSERT INTO employee SET ?",
+      {
+        first_name: first_name,
+        last_name: last_name,
+        manager_id: handleManager(manager_id),
+        role_id: handleRoles(role_id)
+      }, (err, res) => {
+        if (err) throw err;
+        // make an array of roles
+        console.log(res.affectedRows)
+      })
 
-  afterConnection();
+    afterConnection();
   });
 
 };
 
 
 function handleManager(manager_id) {
-  if(manager_id === "Sarah"){
+  if (manager_id === "Sarah") {
     return 2
-  } else if (manager_id === "Peter"){
+  } else if (manager_id === "Peter") {
     return 4
-  } else if (manager_id === "Lawrence"){
+  } else if (manager_id === "Lawrence") {
     return 6
-  } else if (manager_id === "Jack"){
+  } else if (manager_id === "Jack") {
     return 7
-  } else if (manager_id === "Felicia"){
+  } else if (manager_id === "Felicia") {
     return 8
   }
 };
 
 function handleRoles(role_id) {
-  if(role_id === "Accountant"){
+  if (role_id === "Accountant") {
     return 1
-  } else if (role_id === "Manager"){
+  } else if (role_id === "Manager") {
     return 2
-  } else if (role_id === "Lawyer"){
+  } else if (role_id === "Lawyer") {
     return 3
-  } else if (role_id === "I.T"){
+  } else if (role_id === "I.T") {
     return 4
-  } else if (role_id === "Receptionist"){
+  } else if (role_id === "Receptionist") {
     return 5
+  } else if (role_id === "Sales Lead") {
+    return 6
   }
 };
 
-// function addRole(){
-//   inquirer.prompt(addRole).then(function (data) { console.log(data)
-//     const {title, salary, department_id} = data 
-//     connection.query("INSERT INTO employee SET ?", 
-//     {
-//       title: title,
-//       salary: salary,
-//       department_id: handleDepartment(department_id),
-//     }, (err, res) => {
-//       if(err) throw err;
-//       // make an array of roles
-//       console.log(res.affectedRows)
-//     })
+function addRole() {
+  inquirer.prompt(addRole).then(function (data) {
+    console.log(data)
+    const { title, salary, department_id } = data
+    connection.query("INSERT INTO role SET ?",
+      {
+        title: title,
+        salary: salary,
+        department_id: handleDepartment(department_id),
+      }, (err, res) => {
+        if (err) throw err;
+        // make an array of roles
+        console.log(res.affectedRows)
+      })
 
-//   afterConnection();
-//   });
-// };
-
-// function handleDepartment(department_id){
-//   if(department_id === "Sarah"){
-//     return 2
-// };
-
-function updateEmployeeRole(){
-  getEmployeeList()
-
-// connection.query("SELECT first_name, last_name FROM employee", function (err, res) {
-  // if (err) throw err;
-
-  // afterConnection();
-// })
-};
-
-function getEmployeeList(){
-  let list = []
-  connection.query("SELECT first_name, last_name FROM employee", function (err, res) {
-    if (err) throw err;
-    console.table(res)
-    for(let i = 1; i < res.length; i++){
-      let fullname = ""
-      fullname = `${res.first_name[i]} ${res.last_name[i]}`
-      list.push(fullname)
-    } 
+    afterConnection();
   });
-  console.log(list)
-  return list
 };
+
+// function handleDepartment(department_id) {
+//   if (department_id === "Sarah") {
+//     return 2
+//   };
+// }
+
+async function updateEmployeeRole() {
+  let name;
+  let role;
+  connection.query('SELECT CONCAT(first_name, " ", last_name) AS full_name FROM employee', function (err, data) {  
+    if (err) throw err;
+    name = data.map(e => e.full_name) 
+    console.log(name)
+    connection.query('SELECT title FROM role', function(err, res) {
+      if(err) throw err
+      console.log(res);
+      role = res.map(val => val.title);
+      inquirer.prompt([
+        {
+          type: "list",
+          message: "Which employee's role would you like to update?",
+          choices: name,
+          name: "full_name"
+        },
+        {
+          type: "list",
+          message: "select the employees new role",
+          name: "newRole",
+          choices: role
+        }
+      ]).then(data => {
+        console.log(data)
+        afterConnection()
+      })
+    })
+     
+    // connection.query("SELECT first_name, last_name FROM employee", function (err, res) {
+    // if (err) throw err;
+  
+    // afterConnection();
+    // }) 
+  }); 
+
+};
+
+function getEmployeeList(fullName) {
+  return connection.query('SELECT CONCAT(first_name, " ", last_name) AS full_name FROM employee', function (err, data) {  
+    if (err) throw err;
+    // const name = data.map(e => e.full_name) 
+    // console.log(name)
+    //  return name
+  }); 
+};
+
 
 function viewEmployees() {
   connection.query("SELECT id, first_name, last_name FROM employee", function (err, res) {
