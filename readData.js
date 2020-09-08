@@ -54,19 +54,13 @@ const newRole = [
   {
     type: "input",
     message: "What role would you like to add?",
-    name: "newRole"
+    name: "roleTitle"
   },
   {
     type: "input",
     message: "What is the salary of this role?",
     name: "newSalary"
-  },
-  {
-    type: "list",
-    message: "What is the department of this role?",
-    //choices: connection.department.name,
-    name: "RoleDeparment",
-  },
+  }
 ];
 
 const newDepartment = [
@@ -77,26 +71,11 @@ const newDepartment = [
   },
 ];
 
-// const updateRole = [
-//   {
-//     type: "list",
-//     message: "Which employee's role would you like to update?",
-//     choices: [],
-//     name: "full_name"
-//   },
-//   {
-//     type: "list",
-//     message: "select the employees new role",
-//     name: "newRole"
-//   }
-// ];
-
 connection.connect(function (err) {
   if (err) throw err;
   console.log("connected as id " + connection.threadId);
   afterConnection();
 });
-
 
 function afterConnection() {
   inquirer.prompt(mainMenu).then(function (mainChoice) {
@@ -180,40 +159,44 @@ function handleRoles(role_id) {
 };
 
 function addRole() {
-  inquirer.prompt(addRole).then(function (data) {
-    console.log(data)
-    const { title, salary, department_id } = data
+  inquirer.prompt(newRole).then(function (data) {
     connection.query("INSERT INTO role SET ?",
       {
-        title: title,
-        salary: salary,
-        department_id: handleDepartment(department_id),
-      }, (err, res) => {
+        title: data.roleTitle,
+        salary: data.newSalary,
+      },
+      (err, res) => {
         if (err) throw err;
-        // make an array of roles
-        console.log(res.affectedRows)
+        afterConnection();
       })
 
-    afterConnection();
   });
 };
 
-// function handleDepartment(department_id) {
-//   if (department_id === "Sarah") {
-//     return 2
-//   };
-// }
+function addDepartment() {
+  inquirer.prompt(newDepartment).then(function (data) {
+    connection.query("INSERT INTO department SET ?",
+      {
+        department_name: data.newDepartment,
+      },
+      (err, res) => {
+        if (err) throw err;
+        afterConnection();
+      })
+
+  });
+};
 
 async function updateEmployeeRole() {
   let name;
   let role;
-  connection.query('SELECT CONCAT(first_name, " ", last_name) AS full_name FROM employee', function (err, data) {  
+  connection.query('SELECT CONCAT(first_name, " ", last_name) AS full_name FROM employee', function (err, data) {
     if (err) throw err;
-    name = data.map(e => e.full_name) 
-    console.log(name)
-    connection.query('SELECT title FROM role', function(err, res) {
-      if(err) throw err
-      console.log(res);
+    name = data.map(e => e.full_name)
+    // console.log(name)
+    connection.query('SELECT title FROM role', function (err, res) {
+      if (err) throw err
+      // console.log(res);
       role = res.map(val => val.title);
       inquirer.prompt([
         {
@@ -229,29 +212,29 @@ async function updateEmployeeRole() {
           choices: role
         }
       ]).then(data => {
-        console.log(data)
         afterConnection()
+          // connection.query("UPDATE role SET ? WHERE ?",
+          //   {
+          //     title: data.roleTitle,
+          //   },
+          //   (err, res) => {
+          //     if (err) throw err;
+          //     afterConnection();
+          //   });
+
+        // connection.query(
+        //   "UPDATE employee SET ? WHERE ?",
+        //   [
+        //     {
+        //       role_id: role
+        //     }
+        //   ],
+        // );
+
       })
     })
-     
-    // connection.query("SELECT first_name, last_name FROM employee", function (err, res) {
-    // if (err) throw err;
-  
-    // afterConnection();
-    // }) 
-  }); 
-
+  });
 };
-
-function getEmployeeList(fullName) {
-  return connection.query('SELECT CONCAT(first_name, " ", last_name) AS full_name FROM employee', function (err, data) {  
-    if (err) throw err;
-    // const name = data.map(e => e.full_name) 
-    // console.log(name)
-    //  return name
-  }); 
-};
-
 
 function viewEmployees() {
   connection.query("SELECT id, first_name, last_name FROM employee", function (err, res) {
@@ -260,7 +243,6 @@ function viewEmployees() {
     afterConnection();
   });
 };
-
 
 function viewDepartment() {
   connection.query("SELECT department_name FROM department", function (err, res) {
@@ -282,12 +264,12 @@ function viewtable() {
   let tableQuery = "SELECT employee.id, employee.first_name, employee.last_name, role.title,"
   tableQuery += " department.department_name, role.salary, employee.manager_id"
   tableQuery += " FROM department INNER JOIN role"
-  tableQuery += " ON department.id = role.department_id INNER JOIN employee"
+  tableQuery += " ON department.id = role.id INNER JOIN employee"
   tableQuery += " ON employee.role_id = role.id"
-
   connection.query(tableQuery, function (err, res) {
     if (err) throw err;
     console.table(res);
     afterConnection();
   });
 };
+
