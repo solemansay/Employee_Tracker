@@ -190,14 +190,16 @@ function addDepartment() {
 async function updateEmployeeRole() {
   let name;
   let role;
-  connection.query('SELECT CONCAT(first_name, " ", last_name) AS full_name FROM employee', function (err, data) {
+  connection.query('SELECT id, CONCAT(first_name, " ", last_name) AS full_name FROM employee', function (err, data) {
     if (err) throw err;
-    name = data.map(e => e.full_name)
+    name = data.map(e => e.full_name);
+    nameIDPack = data;
     // console.log(name)
-    connection.query('SELECT title FROM role', function (err, res) {
+    connection.query('SELECT id, title FROM role', function (err, res) {
       if (err) throw err
       // console.log(res);
       role = res.map(val => val.title);
+      roleIDPack = res;
       inquirer.prompt([
         {
           type: "list",
@@ -212,24 +214,23 @@ async function updateEmployeeRole() {
           choices: role
         }
       ]).then(data => {
-        afterConnection()
-          // connection.query("UPDATE role SET ? WHERE ?",
-          //   {
-          //     title: data.roleTitle,
-          //   },
-          //   (err, res) => {
-          //     if (err) throw err;
-          //     afterConnection();
-          //   });
-
-        // connection.query(
-        //   "UPDATE employee SET ? WHERE ?",
-        //   [
-        //     {
-        //       role_id: role
-        //     }
-        //   ],
-        // );
+       let roleInfo = roleIDPack.find(obj => obj.title === data.newRole);
+       let nameInfo = nameIDPack.find(obj => obj.full_name === data.full_name);
+        connection.query(
+          "UPDATE employee SET ? WHERE ?",
+          [
+            {
+              role_id: roleInfo.id
+            },
+            {
+              id: nameInfo.id
+            }
+          ], (err, res) => {
+            if (err) throw err;
+            console.log(nameInfo.full_name + " updated to " + roleInfo.title + " role!\n");
+            afterConnection();
+          }
+        );
 
       })
     })
